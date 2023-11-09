@@ -19,6 +19,7 @@ class Server {
 		await dbConnection();
 	}
 
+	//Es una funcion que se ejecuta antes de llamar ya sea un controlador o seguir con la ejecucion de mis peticiones
 	middlewares() {
 		//CORS
 		this.app.use(cors());
