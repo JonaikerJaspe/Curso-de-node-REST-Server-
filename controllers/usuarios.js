@@ -4,16 +4,26 @@ const bcryptjs = require("bcryptjs");
 const Usuario = require("../models/usuario");
 
 
-const usuariosGet = (req = request, res = responde) => {
-	const { q, nombre, apikey, page = 1, limit } = req.query;
+const usuariosGet = async (req = request, res = responde) => {
+
+	const { limite = 5, desde = 0 } = req.query;
+	const query = { estado: true }
+	// const usuarios = await Usuario.find(query)
+	// 	.skip(Number(desde))
+	// 	.limit(Number(limite))
+
+	// const total = await Usuario.countDocuments({ estado: true })
+	const [total, usuarios] = await Promise.all([
+		Usuario.countDocuments(query),
+		Usuario.find(query)
+			.skip(Number(desde))
+			.limit(Number(limite))
+
+	])
 
 	res.json({
-		msg: "get API - controlador",
-		q,
-		nombre,
-		apikey,
-		page,
-		limit,
+		total,
+		usuarios
 	});
 };
 
@@ -29,6 +39,7 @@ const usuariosPost = async (req, res = responde) => {
 	if (existeEmail) {
 		return res.status(400).json({
 			msg: "Ese Correo ya esta registrado",
+			usuario
 		});
 	}
 
@@ -45,12 +56,22 @@ const usuariosPost = async (req, res = responde) => {
 	});
 };
 
-const usuariosPut = (req, res = responde) => {
-	const id = req.params.id;
+const usuariosPut = async (req, res = responde) => {
+	const { id } = req.params;
+	const { _id, password, google, correo, ...resto } = req.body;
+
+	//TODO Validar Contra base de datos 
+
+	if (password) {
+		//encriptar la contrasena
+		const salt = bcryptjs.genSaltSync();
+		resto.password = bcryptjs.hashSync(password, salt)
+	}
+
+	const usuario = await Usuario.findByIdAndUpdate(id, resto)
 
 	res.json({
-		msg: "put API - controlador",
-		id,
+		usuario,
 	});
 };
 
@@ -60,9 +81,17 @@ const usuariosPatch = (req, res = responde) => {
 	});
 };
 
-const usuariosDelete = (req, res = responde) => {
+const usuariosDelete = async (req, res = responde) => {
+
+	const { id } = req.params;
+
+	// const usuario = await Usuario.findByIdAndDelete(id);
+	const usuario = await Usuario.findByIdAndUpdate(id, { estado: false });
+
+
+
 	res.json({
-		msg: "delete API - controlador",
+		usuario
 	});
 };
 
